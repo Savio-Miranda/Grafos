@@ -3,9 +3,6 @@
 #include <limits.h>
 using namespace std;
 
-
-typedef vector<vector<int>> Matrix;
-
 enum class Color
 {
     White,
@@ -22,6 +19,9 @@ struct Node
     int discovered;
     int finalized;
 };
+
+typedef vector<vector<int>> Matrix;
+typedef vector<Node*> Queue;
 
 class Graph
 {
@@ -74,6 +74,7 @@ class Graph
 
         void show_matrix_representation()
         {
+            cout << "Matrix representation..." << endl;
             int count = 0;
             for(vector<int> line : this->matrix)
             {
@@ -93,25 +94,26 @@ class Graph
                 cout << "\n";
                 count++;
             }
+            cout << endl;
         }
 
-        void show_nodes_representation()
-        {
-            cout << "--------------";
-            for(Node* node : nodes)
-            {
-                cout << "Index: " << node->index << endl;
-                cout << "Color: " << color_to_string(node->color) << endl;
-                if (node->ancester == nullptr){
-                    cout << "Ancester: " << "Null" << endl;
-                } else {
-                    cout << "Ancester: " << (node->ancester)->index << endl;
-                }
-                cout << "Discovered: " << node->discovered << endl;
-                cout << "Finalized: " << node->finalized << endl;
-                cout << "--------------";
-            }
-        }
+        // void show_nodes_representation()
+        // {
+        //     cout << "--------------";
+        //     for(Node* node : nodes)
+        //     {
+        //         cout << "Index: " << node->index << endl;
+        //         cout << "Color: " << color_to_string(node->color) << endl;
+        //         if (node->ancester == nullptr){
+        //             cout << "Ancester: " << "Null" << endl;
+        //         } else {
+        //             cout << "Ancester: " << (node->ancester)->index << endl;
+        //         }
+        //         cout << "Discovered: " << node->discovered << endl;
+        //         cout << "Finalized: " << node->finalized << endl;
+        //         cout << "--------------";
+        //     }
+        // }
 
         void DFS_Visit(Node* node, int &time)
         {
@@ -147,53 +149,73 @@ class Graph
             }
         }
 
-
-        /*
-        BFS(G,s)
-            for cada u ∈ V[G] - {s} //Todos exceto s=fonte
-                do cor [u] = BRANCO
-                    d[u] = ∞
-                    π[u] = NULO
-            
-            cor [s] = CINZA
-            d[s] = 0
-            π[s] = NULO // vertice s nao possui antecessor
-            Q = ∅
-            ENFILEIRAR(Q,s) // inicializa a fila Q com o vert. s
-        
-            while (Q != 0 )
-                do u = DESENFILEIRAR(Q)
-                    for cada v ∈ Adj[u] // Explorar (u,v)
-                        do If cor [v ] = BRANCO
-                            then cor [v ] = CINZA
-                                d[v ] = d[u] + 1
-                                π[v ] = u
-                                ENFILEIRAR(Q,v)
-                    cor [u] = PRETO
-        */
-
-        void enfileirar(int Q, Node* n){
-            while (Q != 0)
-            {
-                
-            }
-            
-        }
-
         void BFS(Node* n)
         {
+            cout << "Starting BFS..." << endl;
+            
+            
+            cout << "Setting every adjacent..." << endl;
             for (Node* adj : n->adjacents)
             {
                 adj->color = Color::White;
                 adj->discovered = INT_MAX;
                 adj->ancester = nullptr;
             }
+            
+            
+            cout << "Initial node: (" << n->index << ") | ";
             n->color = Color::Gray;
+            cout << "Color: " << color_to_string(n->color) << " | ";
             n->discovered = 0;
+            cout << "Discovered: " << n->discovered << " | ";
             n->ancester = nullptr;
+            cout << "Ancester: Null |" << endl;
+            cout << "----------------------------------------------------------------------" << endl;
 
-            int Q = 0;
-            enfileirar(Q, n);
+            cout << "Populating queue with initial node..." << endl;
+            Queue queue = {n};
+
+            while (queue.size() != 0)
+            {
+                Node* node = queue.front();
+                queue.erase(queue.begin());
+                for (Node* adj : node->adjacents)
+                {
+                    if (adj->color == Color::White)
+                    {
+                        cout << "Current node: (" << adj->index << ") | ";
+                        adj->color = Color::Gray;
+                        cout << "Color: " << color_to_string(adj->color) << " | ";
+                        adj->discovered = node->discovered + 1;
+                        cout << "Discovered: " << adj->discovered << " | ";
+                        adj->ancester = node;
+                        cout << "Ancester: " << (adj->ancester)->index << " |" << endl;
+                        cout << "----------------------------------------------------------------------" << endl;
+                        queue.push_back(adj);
+                    }
+                }
+
+                if (!queue.empty()) {
+                    cout << "Nodes in queue: ";
+                    for (Node* a : queue) {
+                        cout << a->index << " ";
+                    }
+                    cout << "\n" << endl;
+                } else {
+                    cout << "Queue is empty." << endl;
+                }
+
+                node->color = Color::Black;
+                cout << "node: (" << node->index << ") | ";
+                cout << "Color: " << color_to_string(node->color) << " | ";
+                cout << "Discovered: " << node->discovered << " | ";
+                if (node->ancester != nullptr){
+                    cout << "Ancester: " << (node->ancester)->index << " |" << endl;
+                } else {
+                    cout << "Ancester: Null |" << endl;
+                }
+                cout << "----------------------------------------------------------------------" << endl;
+            }
         }
 
 };
@@ -235,6 +257,7 @@ vector<Node*> ask_adjacents(Node &n, size_t available_nodes, vector<Node*> nodes
             cout << "Número maior ou menor do que o número de vértices disponíveis (" << available_nodes << ")\nNúmero inserido: " << myNum << endl;
         }
     }
+    cout << endl;
     return adjacents;
 }
 
@@ -254,10 +277,11 @@ int main() {
     }
 
     Graph graph(nodes);
-    graph.maps_matrix();
+    // graph.maps_matrix();
     graph.show_matrix_representation();
-    graph.DFS();
-    graph.show_nodes_representation();
+    // graph.DFS();
+    graph.BFS(&a);
+    // graph.show_nodes_representation();
 
 
     return 0;
