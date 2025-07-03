@@ -1,7 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <limits.h>
+
 using namespace std;
+
 
 enum class Color
 {
@@ -18,6 +20,11 @@ struct Vertex
     vector<Vertex*> adjacents;
     int discovered;
     int finalized;
+    
+    // Adicione este operador para permitir a comparação
+    bool operator<(const Vertex& other) const {
+        return index < other.index;
+    }
 };
 
 typedef vector<vector<int>> Matrix;
@@ -155,7 +162,7 @@ class Graph
             }
             cout << endl;
         }
-
+        
         void show_vertex(Vertex* vertex)
         {
             cout << "vertex: (" << vertex->index << ") | ";
@@ -170,17 +177,15 @@ class Graph
             string linha(82, '-');
             cout << "\n" << linha << endl;
         }
-
+        
         vector<int> DFS_backtrack(Vertex* vertex, vector<int> circle_path){
             if (vertex->ancester == nullptr)
-            {
                 return circle_path;
-            }
             
             circle_path.push_back(vertex->ancester->index);
-            DFS_backtrack(vertex->ancester, circle_path);
+            return DFS_backtrack(vertex->ancester, circle_path); // RETURN ADICIONADO
         }
-
+        
         void DFS_Visit(Vertex* vertex, int &time)
         {
             vertex->color = Color::Gray;
@@ -189,6 +194,7 @@ class Graph
             
             cout << "Visiting ";
             show_vertex(vertex);
+            
             for(Vertex* adj: vertex->adjacents)
             {
                 if (adj->color == Color::White)
@@ -199,20 +205,8 @@ class Graph
             }
             vertex->color = Color::Black;
             vertex->finalized = ++time;
-
-            if (vertex->adjacents.size() >= 2){
-                vector<int> circle_path = {vertex->index};
-                circle_path = (vertex, circle_path);
-                cout << "PATH TO CIRCLE PATH FOUNDED: ";
-                for(int path: circle_path) {
-                    if (circle_path.back() != path){
-                        cout << path << " <- ";
-                    } else {
-                        cout << path << endl;
-                    }
-                }
-
-            }
+            cout << "*Back to ";
+            show_vertex(vertex);
         }
 
         void DFS(int starting_vertex)
@@ -229,21 +223,80 @@ class Graph
             int time = 0;
             
             quickSort(vertices, 0, vertices.size() - 1);
-            for(Vertex* v : vertices){
-                cout << v->index << " ";
-            }
             cout << endl;
             vertices.insert(vertices.begin(), vertices.back());
             vertices.pop_back();
-            for(Vertex* v : vertices){
-                cout << v->index << " ";
-            }
-            cout << endl;
 
             for (Vertex* vertex : vertices)
             {
                 if (vertex->color == Color::White)
                     DFS_Visit(vertex, time);
+            }
+            cout << "DFS finished...\n" << endl;
+        }
+
+        vector<int> DFS_visit_cicle(Vertex* vertex, int &time, vector<int> chase)
+        {
+            vertex->color = Color::Gray;
+            time++;
+            vertex->discovered = time;
+            cout << "Visitando " << vertex->index << endl;
+            for(Vertex* adj: vertex->adjacents)
+            {
+                if (adj->color == Color::White)
+                {
+                    adj->ancester = vertex;
+                    chase.push_back(adj->index);
+                    chase = DFS_visit_cicle(adj, time, chase);
+                }
+                if (adj->color == Color::Gray && vertex->ancester != adj){
+                    return chase;
+                }
+
+            }
+            return chase;
+        }
+
+        void DFS_Cicle(int starting_vertex)
+        {
+            Vertex* n = vertices[starting_vertex];
+            vector<int> chase;
+            cout << "Starting DFS..." << endl;
+            cout << "Setting every adjacent..." << endl;
+            for (Vertex* vertex: vertices)
+            {
+                vertex->color = Color::White;
+                vertex->ancester = NULL;
+            }
+            
+            int time = 0;
+            
+            quickSort(vertices, 0, vertices.size() - 1);
+            cout << endl;
+            vertices.insert(vertices.begin(), vertices.back());
+            vertices.pop_back();
+            for (Vertex* vertex : vertices)
+            {
+                if (vertex->color == Color::White){
+                    chase = DFS_visit_cicle(vertex, time, chase);
+                    for (int c : chase){
+                        cout << c << " ";
+                    }
+                    cout << endl;
+                    // if (end_vertex == nullptr){
+                    //     cout << "YEAH" << endl;
+                    //     continue;
+                    // } else {
+                    //     vector<int> cicle_path;
+                    //     cicle_path = DFS_backtrack(end_vertex, cicle_path);
+                    //     for (int path : cicle_path){
+                    //         cout << path << " <- ";
+                    //     }
+                    //     break;
+                    // }
+                }
+
+                    
             }
             cout << "DFS finished...\n" << endl;
         }
@@ -257,6 +310,7 @@ class Graph
             path_vector.push_back(vertex->index);
             return BFS_backtrack(vertex->ancester, path_vector);
         }
+        
 
         void BFS(int starting_vertex, int ending_vertex)
         {
@@ -321,7 +375,8 @@ class Graph
                 show_vertex(vertex);
             }
 
-            cout << "PATH TO ENDING NODE FOUNDED: ";
+            cout << "PATH SIZE: " << path_vector.size() << endl;
+            cout << "PATH: ";
             for(int path: path_vector) {
                 if (path_vector.back() != path){
                     cout << path << " <- ";
@@ -338,48 +393,48 @@ class Graph
                 delete vertex;
             }
         }
-};
-
-vector<Vertex*> ask_adjacents(Vertex &n, size_t available_vertices, vector<Vertex*> vertices)
-{
-    cout << "Quantos adjacentes o vértice " << n.index << " possui?\n-> ";
-    int num_adjacents;
-    cin >> num_adjacents;
-    try
-    {
-        if (num_adjacents >= 0 || num_adjacents <= available_vertices - 1)
+        
+        vector<Vertex*> ask_adjacents(Vertex &n, size_t available_vertices, vector<Vertex*> vertices)
         {
-            cout << "Agora forneça ao vértice, seus adjacentes (iterativamente): " << endl;
-        } else {
-            throw (num_adjacents);
-        }
-    } catch (int myNum) {
-        cout << "Número maior ou menor do que o número de vértices disponíveis (" << available_vertices << ")\nNúmero inserido: " << myNum << endl;
-    }
-    
-    vector<Vertex*> adjacents;
-
-    for (size_t i = 0; i < num_adjacents; i++)
-    {
-        cout << i + 1 << "º adjacente: ";
-        int choice;
-        cin >> choice;
-        try
-        {
-            if (choice >= 0 || choice <= available_vertices - 1)
+            cout << "Quantos adjacentes o vértice " << n.index << " possui?\n-> ";
+            int num_adjacents;
+            cin >> num_adjacents;
+            try
             {
-                adjacents.push_back(vertices[choice]);
-                continue;
-            } else {
-                throw (num_adjacents);
+                if (num_adjacents >= 0 || num_adjacents <= available_vertices - 1)
+                {
+                    cout << "Agora forneça ao vértice, seus adjacentes (iterativamente): " << endl;
+                } else {
+                    throw (num_adjacents);
+                }
+            } catch (int myNum) {
+                cout << "Número maior ou menor do que o número de vértices disponíveis (" << available_vertices << ")\nNúmero inserido: " << myNum << endl;
             }
-        } catch (int myNum) {
-            cout << "Número maior ou menor do que o número de vértices disponíveis (" << available_vertices << ")\nNúmero inserido: " << myNum << endl;
+            
+            vector<Vertex*> adjacents;
+        
+            for (size_t i = 0; i < num_adjacents; i++)
+            {
+                cout << i + 1 << "º adjacente: ";
+                int choice;
+                cin >> choice;
+                try
+                {
+                    if (choice >= 0 || choice <= available_vertices - 1)
+                    {
+                        adjacents.push_back(vertices[choice]);
+                        continue;
+                    } else {
+                        throw (num_adjacents);
+                    }
+                } catch (int myNum) {
+                    cout << "Número maior ou menor do que o número de vértices disponíveis (" << available_vertices << ")\nNúmero inserido: " << myNum << endl;
+                }
+            }
+            cout << endl;
+            return adjacents;
         }
-    }
-    cout << endl;
-    return adjacents;
-}
+};
 
 int main() {
     Matrix matrix = {
@@ -391,25 +446,13 @@ int main() {
         {0, 0, 0, 1, 0, 1}, // 4
         {0, 1, 0, 0, 1, 0}  // 5
     };
-    // Vertex a, b, c, d, e, f;
-    // vector<Vertex*> vertices = { &a, &b, &c, &d, &e, &f};
-    // int vertices_size = vertices.size();
-    // for (size_t i = 0; i < vertices_size; i++)
-    // {
-    //     vertices[i]->index = i;
-    //     vertices[i]->color = Color::White;
-        
-    //     vector<Vertex*> adjacents = ask_adjacents(*vertices[i], vertices_size, vertices);
-    //     for (Vertex* adj : adjacents){
-    //         vertices[i]->adjacents.push_back(adj);
-    //     }
-    // }
 
     Graph graph;
     // graph.maps_matrix();
     graph.insert_from_matrix(matrix);
     graph.show_matrix_representation();
-    graph.DFS(0);
+    // graph.DFS(0);
+    graph.DFS_Cicle(5);
     // graph.BFS(5, 0);
 
 
