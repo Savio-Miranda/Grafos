@@ -171,6 +171,16 @@ class Graph
             cout << "\n" << linha << endl;
         }
 
+        vector<int> DFS_backtrack(Vertex* vertex, vector<int> circle_path){
+            if (vertex->ancester == nullptr)
+            {
+                return circle_path;
+            }
+            
+            circle_path.push_back(vertex->ancester->index);
+            DFS_backtrack(vertex->ancester, circle_path);
+        }
+
         void DFS_Visit(Vertex* vertex, int &time)
         {
             vertex->color = Color::Gray;
@@ -189,6 +199,20 @@ class Graph
             }
             vertex->color = Color::Black;
             vertex->finalized = ++time;
+
+            if (vertex->adjacents.size() >= 2){
+                vector<int> circle_path = {vertex->index};
+                circle_path = (vertex, circle_path);
+                cout << "PATH TO CIRCLE PATH FOUNDED: ";
+                for(int path: circle_path) {
+                    if (circle_path.back() != path){
+                        cout << path << " <- ";
+                    } else {
+                        cout << path << endl;
+                    }
+                }
+
+            }
         }
 
         void DFS(int starting_vertex)
