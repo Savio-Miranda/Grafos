@@ -30,11 +30,17 @@ class Graph
         Matrix matrix;
     
     public:
-        Graph(vector<Node*> nodes)
-        {
-            this->nodes = nodes;
-            int nodes_size = nodes.size();
-            matrix = init_matrix(nodes_size);
+        Graph(){}
+
+        void insert_from_nodes(vector<Node*> incomming_nodes){
+            nodes = incomming_nodes;
+            matrix = init_matrix(nodes.size());
+            maps_matrix();
+        }
+
+        void insert_from_matrix(Matrix incomming_matrix){
+            matrix = incomming_matrix;
+            maps_nodes(matrix);
         }
 
         string color_to_string(Color c)
@@ -68,6 +74,29 @@ class Graph
                 {
                     matrix[node->index][adjt->index] = 1;
                     matrix[adjt->index][node->index] = 1;
+                }
+            }
+        }
+
+        void maps_nodes(Matrix m) {
+            // Primeiro, criar todos os nós e armazená-los no heap
+            nodes.clear();  // Limpa qualquer conteúdo anterior
+            for (size_t i = 0; i < m.size(); i++) {
+                Node* node = new Node();  // Aloca no heap
+                node->index = i;
+                node->color = Color::White;
+                node->ancester = nullptr;
+                node->discovered = 0;
+                node->finalized = 0;
+                nodes.push_back(node);
+            }
+
+            // Depois, preencher as adjacências
+            for (size_t i = 0; i < m.size(); i++) {
+                for (size_t j = 0; j < m[i].size(); j++) {
+                    if (m[i][j] == 1) {
+                        nodes[i]->adjacents.push_back(nodes[j]);
+                    }
                 }
             }
         }
@@ -149,8 +178,10 @@ class Graph
             }
         }
 
-        void BFS(Node* n)
+
+        void BFS(int node_index)
         {
+            Node* n = nodes[node_index];
             cout << "Starting BFS..." << endl;
             
             
@@ -216,8 +247,15 @@ class Graph
                 }
                 cout << "----------------------------------------------------------------------" << endl;
             }
-        }
 
+            
+        }
+        
+        ~Graph() {
+            for (Node* node : nodes) {
+                delete node;
+            }
+        }
 };
 
 vector<Node*> ask_adjacents(Node &n, size_t available_nodes, vector<Node*> nodes)
@@ -262,34 +300,37 @@ vector<Node*> ask_adjacents(Node &n, size_t available_nodes, vector<Node*> nodes
 }
 
 int main() {
-    Node a, b, c, d, e, f;
-    vector<Node*> nodes = { &a, &b, &c, &d, &e, &f};
-    int nodes_size = nodes.size();
-    for (size_t i = 0; i < nodes_size; i++)
-    {
-        nodes[i]->index = i;
-        nodes[i]->color = Color::White;
+    Matrix matrix = {
+        {0, 1, 1, 1, 0, 0},
+        {1, 0, 0, 0, 1, 0},
+        {1, 0, 0, 1, 0, 0},
+        {1, 0, 1, 0, 0, 1},
+        {0, 1, 0, 0, 0, 1},
+        {0, 0, 0, 1, 1, 0}
+    };
+    // Node a, b, c, d, e, f;
+    // vector<Node*> nodes = { &a, &b, &c, &d, &e, &f};
+    // int nodes_size = nodes.size();
+    // for (size_t i = 0; i < nodes_size; i++)
+    // {
+    //     nodes[i]->index = i;
+    //     nodes[i]->color = Color::White;
         
-        vector<Node*> adjacents = ask_adjacents(*nodes[i], nodes_size, nodes);
-        for (Node* adj : adjacents){
-            nodes[i]->adjacents.push_back(adj);
-        }
-    }
+    //     vector<Node*> adjacents = ask_adjacents(*nodes[i], nodes_size, nodes);
+    //     for (Node* adj : adjacents){
+    //         nodes[i]->adjacents.push_back(adj);
+    //     }
+    // }
 
-    Graph graph(nodes);
+    Graph graph;
     // graph.maps_matrix();
+    graph.insert_from_matrix(matrix);
     graph.show_matrix_representation();
     // graph.DFS();
-    graph.BFS(&a);
+    
+    graph.BFS(3);
     // graph.show_nodes_representation();
 
 
     return 0;
 }
-
-
-    // a.adjacents = { &b, &c };
-    // b.adjacents = { &a };
-    // c.adjacents = { &a };
-    // d.adjacents = { &e };
-    // e.adjacents = { &d };
