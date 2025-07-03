@@ -23,6 +23,36 @@ struct Vertex
 typedef vector<vector<int>> Matrix;
 typedef vector<Vertex*> Queue;
 
+
+int partition(vector<Vertex*>& arr, int low, int high) {
+    int pivot = arr[high]->index;
+    int i = low - 1;
+
+    for (int j = low; j < high; j++) {
+        if (arr[j]->index <= pivot) {
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+
+    // Coloca o pivô na posição correta
+    swap(arr[i + 1], arr[high]);
+    return i + 1;  // Retorna o índice do pivô
+}
+
+// Função recursiva para ordenar o vetor usando QuickSort
+void quickSort(vector<Vertex*>& arr, int low, int high) {
+    if (low < high) {
+        
+        // Particiona o vetor e obtém o índice do pivô
+        int pi = partition(arr, low, high);
+
+        // Ordena as duas partes
+        quickSort(arr, low, pi - 1);  // Ordena a parte esquerda
+        quickSort(arr, pi + 1, high); // Ordena a parte direita
+    }
+}
+
 class Graph
 {
     private:
@@ -146,6 +176,9 @@ class Graph
             vertex->color = Color::Gray;
             time++;
             vertex->discovered = time;
+            
+            cout << "Visiting ";
+            show_vertex(vertex);
             for(Vertex* adj: vertex->adjacents)
             {
                 if (adj->color == Color::White)
@@ -156,11 +189,11 @@ class Graph
             }
             vertex->color = Color::Black;
             vertex->finalized = ++time;
-            show_vertex(vertex);
         }
 
-        void DFS()
+        void DFS(int starting_vertex)
         {
+            Vertex* n = vertices[starting_vertex];
             cout << "Starting DFS..." << endl;
             cout << "Setting every adjacent..." << endl;
             for (Vertex* vertex: vertices)
@@ -171,6 +204,18 @@ class Graph
             
             int time = 0;
             
+            quickSort(vertices, 0, vertices.size() - 1);
+            for(Vertex* v : vertices){
+                cout << v->index << " ";
+            }
+            cout << endl;
+            vertices.insert(vertices.begin(), vertices.back());
+            vertices.pop_back();
+            for(Vertex* v : vertices){
+                cout << v->index << " ";
+            }
+            cout << endl;
+
             for (Vertex* vertex : vertices)
             {
                 if (vertex->color == Color::White)
@@ -340,8 +385,8 @@ int main() {
     // graph.maps_matrix();
     graph.insert_from_matrix(matrix);
     graph.show_matrix_representation();
-    // graph.DFS();
-    graph.BFS(5, 0);
+    graph.DFS(0);
+    // graph.BFS(5, 0);
 
 
     return 0;
