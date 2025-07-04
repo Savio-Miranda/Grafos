@@ -60,6 +60,7 @@ void quickSort(vector<Vertex*>& arr, int low, int high) {
     }
 }
 
+
 class Graph
 {
     private:
@@ -177,6 +178,17 @@ class Graph
             string linha(82, '-');
             cout << "\n" << linha << endl;
         }
+
+        void order_DFS_list(int starting_vertex){
+            quickSort(vertices, 0, vertices.size() - 1);
+            vertices.insert(vertices.begin(), vertices[starting_vertex]);
+            for(Vertex* v : vertices){
+                if (starting_vertex == v->index){
+                    vertices.erase(vertices.begin() + starting_vertex + 1);
+                    break;
+                }
+            }
+        }
         
         vector<int> DFS_backtrack(Vertex* vertex, vector<int> circle_path){
             if (vertex->ancester == nullptr)
@@ -222,10 +234,7 @@ class Graph
             
             int time = 0;
             
-            quickSort(vertices, 0, vertices.size() - 1);
-            cout << endl;
-            vertices.insert(vertices.begin(), vertices.back());
-            vertices.pop_back();
+            order_DFS_list(starting_vertex);
 
             for (Vertex* vertex : vertices)
             {
@@ -235,32 +244,67 @@ class Graph
             cout << "DFS finished...\n" << endl;
         }
 
-        vector<int> DFS_visit_cicle(Vertex* vertex, int &time, vector<int> chase)
+
+        void DFS_visit_cicle(Vertex* vertex, int &time, vector<Vertex*> &cycle_path)
         {
             vertex->color = Color::Gray;
             time++;
             vertex->discovered = time;
-            cout << "Visitando " << vertex->index << endl;
+            cycle_path.push_back(vertex);
+
             for(Vertex* adj: vertex->adjacents)
-            {
+            {   
                 if (adj->color == Color::White)
                 {
                     adj->ancester = vertex;
-                    chase.push_back(adj->index);
-                    chase = DFS_visit_cicle(adj, time, chase);
+                    DFS_visit_cicle(adj, time, cycle_path);
                 }
-                if (adj->color == Color::Gray && vertex->ancester != adj){
-                    return chase;
+                if (vertex->ancester == nullptr){
+                    return;
+                }
+                if (adj->color == Color::Gray && adj->index != (vertex->ancester)->index){
+                    return;
                 }
 
             }
-            return chase;
+            return;
+        }
+
+        // void cut_vector(vector<Vertex*> &cycle_path){
+        //     for (Vertex* i : cycle_path){
+        //         for(Vertex* j: i->adjacents){
+        //             if(j != cycle_path.back()){
+        //                 return;
+        //             }
+        //         }
+        //     }
+        //     cycle_path.erase(cycle_path.begin());
+        //     cut_vector(cycle_path);
+        // }
+        void cut_vector(std::vector<Vertex*> &cycle_path) {
+            while (!cycle_path.empty()) {
+                Vertex* current = cycle_path.front();
+                Vertex* target = cycle_path.back();
+
+                bool has_adjacent_to_last = false;
+                for (Vertex* neighbor : current->adjacents) {
+                    if (neighbor == target) {
+                        has_adjacent_to_last = true;
+                        break;
+                    }
+                }
+
+                if (has_adjacent_to_last) {
+                    break; // achou um vértice com adjacente correto, para de cortar
+                } else {
+                    cycle_path.erase(cycle_path.begin()); // remove o primeiro elemento
+                }
+            }
         }
 
         void DFS_Cicle(int starting_vertex)
         {
             Vertex* n = vertices[starting_vertex];
-            vector<int> chase;
             cout << "Starting DFS..." << endl;
             cout << "Setting every adjacent..." << endl;
             for (Vertex* vertex: vertices)
@@ -269,36 +313,31 @@ class Graph
                 vertex->ancester = NULL;
             }
             
+            vector<Vertex*> cycle_path;
             int time = 0;
-            
-            quickSort(vertices, 0, vertices.size() - 1);
-            cout << endl;
-            vertices.insert(vertices.begin(), vertices.back());
-            vertices.pop_back();
+
+            order_DFS_list(starting_vertex);
+
             for (Vertex* vertex : vertices)
             {
                 if (vertex->color == Color::White){
-                    chase = DFS_visit_cicle(vertex, time, chase);
-                    for (int c : chase){
-                        cout << c << " ";
+                    DFS_visit_cicle(vertex, time, cycle_path);
+                    if (!cycle_path.empty()){
+                        cout << "Cycle founded: ";
+                        cut_vector(cycle_path);
+                        cycle_path.push_back(cycle_path[0]);
+                        for (Vertex* c : cycle_path){
+                            cout << c->index << " ";
+                        }
+                        cout << endl;
+                        cout << "DFS finished..." << endl;
+                        return;
                     }
-                    cout << endl;
-                    // if (end_vertex == nullptr){
-                    //     cout << "YEAH" << endl;
-                    //     continue;
-                    // } else {
-                    //     vector<int> cicle_path;
-                    //     cicle_path = DFS_backtrack(end_vertex, cicle_path);
-                    //     for (int path : cicle_path){
-                    //         cout << path << " <- ";
-                    //     }
-                    //     break;
-                    // }
-                }
-
-                    
+                }   
             }
-            cout << "DFS finished...\n" << endl;
+            
+            cout << "No cycle founded..." << endl;
+            cout << "DFS finished..." << endl;
         }
 
         vector<int> BFS_backtrack(Vertex* vertex, vector<int> path_vector){
@@ -438,23 +477,20 @@ class Graph
 
 int main() {
     Matrix matrix = {
-    //   0  1  2  3  4  5
-        {0, 1, 1, 1, 0, 0}, // 0
-        {1, 0, 1, 0, 0, 1}, // 1
-        {1, 1, 0, 0, 0, 0}, // 2
-        {1, 0, 0, 0, 1, 0}, // 3
-        {0, 0, 0, 1, 0, 1}, // 4
-        {0, 1, 0, 0, 1, 0}  // 5
+    //   0  1  2  3  4 
+        {0, 1, 0, 1, 1}, // 0
+        {1, 0, 1, 0, 0}, // 1
+        {0, 1, 0, 1, 0}, // 2
+        {1, 0, 1, 0, 0}, // 3
+        {1, 0, 0, 0, 0}, // 4
     };
-
     Graph graph;
     // graph.maps_matrix();
     graph.insert_from_matrix(matrix);
     graph.show_matrix_representation();
-    // graph.DFS(0);
-    graph.DFS_Cicle(5);
-    // graph.BFS(5, 0);
-
+    graph.DFS(0);
+    graph.DFS_Cicle(0);
+    graph.BFS(4, 0);
 
     return 0;
 }
